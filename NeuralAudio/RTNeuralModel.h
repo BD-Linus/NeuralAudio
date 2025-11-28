@@ -7,8 +7,38 @@
 #endif
 #include "TemplateHelper.h"
 
+#if !RTNEURAL_USE_EIGEN
+	// If RTNeural hasn't included eigen, we still need it since this file uses Eigen::MatrixXf in loaders
+	#include <Eigen/Dense>
+	// And we can use math_approx for xsimd-based approximations
+	#include <math_approx/math_approx.hpp>
+#endif
+
+
 namespace NeuralAudio
 {
+#if !RTNEURAL_USE_EIGEN
+	struct FastMathsProvider
+	{
+		template <typename T>
+		static T tanh(const T& x)
+		{
+			return math_approx::tanh<9> (x);
+		}
+
+		template <typename T>
+		static T sigmoid(const T& x)
+		{
+			return math_approx::sigmoid<9> (x);
+		}
+
+		template <typename T>
+		static T exp(const T& x)
+		{
+			return math_approx::exp<6> (x);
+		}
+	};
+#else
 	struct FastMathsProvider
 	{
 		template <typename Matrix>
@@ -31,6 +61,7 @@ namespace NeuralAudio
 			return x.array().exp();
 		}
 	};
+#endif
 
 	class RTNeuralModel : public NeuralModel
 	{
