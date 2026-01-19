@@ -112,17 +112,20 @@ namespace NeuralAudio
 		return true;
 	}
 
-	NeuralModel* NeuralModel::CreateFromFile(std::filesystem::path modelPath)
+	NeuralModel* NeuralModel::CreateFromFile(const std::string& modelPath)
 	{
-		if (!std::filesystem::exists(modelPath))
+		std::ifstream jsonStream(modelPath, std::ifstream::binary);
+		if (!jsonStream.good())
 			return nullptr;
 
-		std::ifstream jsonStream(modelPath, std::ifstream::binary);
+		// Extract extension from path
+		size_t dotPos = modelPath.find_last_of('.');
+		std::string extension = (dotPos != std::string::npos) ? modelPath.substr(dotPos) : "";
 
-		return CreateFromStream(jsonStream, modelPath.extension());
+		return CreateFromStream(jsonStream, extension);
 	}
 
-	NeuralModel* NeuralModel::CreateFromStream(std::basic_istream<char>& jsonStream, std::filesystem::path extension)
+	NeuralModel* NeuralModel::CreateFromStream(std::basic_istream<char>& jsonStream, const std::string& extension)
 	{
 		EnsureModelDefsAreLoaded();
 
