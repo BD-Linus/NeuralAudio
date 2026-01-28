@@ -23,13 +23,13 @@ namespace NeuralAudio
 		template <typename T>
 		static T tanh(const T& x)
 		{
-			return math_approx::tanh<9> (x);
+			return math_approx::tanh<5> (x);
 		}
 
 		template <typename T>
 		static T sigmoid(const T& x)
 		{
-			return math_approx::sigmoid<9> (x);
+			return math_approx::sigmoid<5> (x);
 		}
 
 		template <typename T>
@@ -39,20 +39,106 @@ namespace NeuralAudio
 		}
 	};
 #else
+	// When using Eigen, we still need xsimd for math_approx
+	#include <math_approx/math_approx.hpp>
+	
 	struct FastMathsProvider
 	{
 		template <typename Matrix>
 		static auto tanh(const Matrix& x)
 		{
-			return x.array().tanh();
+			return x.unaryExpr(&math_approx::tanh<9, float>);
 		}
 
 		template <typename Matrix>
 		static auto sigmoid(const Matrix& x)
 		{
-			using T = typename Matrix::Scalar;
+			return x.unaryExpr(&math_approx::sigmoid<9, float>);
+		}
 
-			return ((x.array() / (T)2).array().tanh() + (T)1) / (T)2;
+		template <typename Matrix>
+		static auto exp(const Matrix& x)
+		{
+			return x.array().exp();
+		}
+	};
+
+	// Lower-order variants for speed testing
+	struct FastMathsProvider_Order3
+	{
+		template <typename Matrix>
+		static auto tanh(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::tanh<3, float>);
+		}
+
+		template <typename Matrix>
+		static auto sigmoid(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::sigmoid<3, float>);
+		}
+
+		template <typename Matrix>
+		static auto exp(const Matrix& x)
+		{
+			return x.array().exp();
+		}
+	};
+
+	struct FastMathsProvider_Order5
+	{
+		template <typename Matrix>
+		static auto tanh(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::tanh<5, float>);
+		}
+
+		template <typename Matrix>
+		static auto sigmoid(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::sigmoid<5, float>);
+		}
+
+		template <typename Matrix>
+		static auto exp(const Matrix& x)
+		{
+			return x.array().exp();
+		}
+	};
+
+	struct FastMathsProvider_Order9
+	{
+		template <typename Matrix>
+		static auto tanh(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::tanh<9, float>);
+		}
+
+		template <typename Matrix>
+		static auto sigmoid(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::sigmoid<9, float>);
+		}
+
+		template <typename Matrix>
+		static auto exp(const Matrix& x)
+		{
+			return x.array().exp();
+		}
+	};
+
+	struct FastMathsProvider_Order7
+	{
+		template <typename Matrix>
+		static auto tanh(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::tanh<7, float>);
+		}
+
+		template <typename Matrix>
+		static auto sigmoid(const Matrix& x)
+		{
+			return x.unaryExpr(&math_approx::sigmoid<7, float>);
 		}
 
 		template <typename Matrix>
@@ -268,16 +354,16 @@ namespace NeuralAudio
 	using LiteDilations1 = wavenet::Dilations<1, 2, 4, 8, 16, 32, 64>;
 	using LiteDilations2 = wavenet::Dilations<128, 256, 512, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512>;
 
-	template <int numChannels, int headSize>
+	template <int numChannels, int headSize, typename MathsProvider = FastMathsProvider>
 	class RTNeuralWaveNetModelT : public RTNeuralModel
 	{
 		using ModelType = typename std::conditional<numChannels == 16,
 			wavenet::Wavenet_Model<float, 1,
-				wavenet::Layer_Array<float, 1, 1, headSize, numChannels, 3, StdDilations, false, FastMathsProvider>,
-				wavenet::Layer_Array<float, numChannels, 1, 1, headSize, 3, StdDilations, true, FastMathsProvider>>,
+				wavenet::Layer_Array<float, 1, 1, headSize, numChannels, 3, StdDilations, false, MathsProvider>,
+				wavenet::Layer_Array<float, numChannels, 1, 1, headSize, 3, StdDilations, true, MathsProvider>>,
 			wavenet::Wavenet_Model<float, 1,
-				wavenet::Layer_Array<float, 1, 1, headSize, numChannels, 3, LiteDilations1, false, FastMathsProvider>,
-				wavenet::Layer_Array<float, numChannels, 1, 1, headSize, 3, LiteDilations2, true, FastMathsProvider>>
+				wavenet::Layer_Array<float, 1, 1, headSize, numChannels, 3, LiteDilations1, false, MathsProvider>,
+				wavenet::Layer_Array<float, numChannels, 1, 1, headSize, 3, LiteDilations2, true, MathsProvider>>
 			>::type;
 
 	public:

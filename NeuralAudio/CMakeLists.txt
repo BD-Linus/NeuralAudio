@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_definitions(-DNAM_SAMPLE_FLOAT)
 add_definitions(-DDSP_SAMPLE_FLOAT)
 
-option(BUILD_STATIC_RTNEURAL "Build Static RTNeural" OFF)
+option(BUILD_STATIC_RTNEURAL "Build Static RTNeural" ON)
 if(BUILD_STATIC_RTNEURAL)
     message(STATUS "Building static RTNeural models")
     add_definitions(-DBUILD_STATIC_RTNEURAL)
