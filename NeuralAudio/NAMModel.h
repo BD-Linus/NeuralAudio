@@ -81,6 +81,11 @@ namespace NeuralAudio
 			namModel->prewarm();
 		}
 
+		void SetMaxAudioBufferSize(int maxSize) override
+		{
+			namModel->SetMaxBufferSize(maxSize);
+		}
+
 	private:
 		std::unique_ptr<nam::DSP> namModel = nullptr;
 	};
